@@ -34,4 +34,14 @@ namespace ApiClient.Models
         /// </value>
         public int RecordCount { get; set; }
     }
+
+    /// <summary>
+    ///     Very simple version of Keyword Search request for WebApp and IntegrationExams
+    /// </summary>
+    public class ProductDetailsRequest
+    {
+        public string DigiKeyPartNumber { get; set; }
+
+        public int QuantityAvailable { get; set; }
+    }
 }

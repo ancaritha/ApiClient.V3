@@ -88,6 +88,22 @@ namespace ApiClient
             }
         }
 
+        public async Task<string> ProductDetails(string keyword)
+        {
+            var resourcePath = "/Search/v3/Products/{P5555-ND}?includes=DigiKeyPartNumber%2CQuantityAvailable";
+
+            var request1 = new ProductDetailsRequest
+            {
+                DigiKeyPartNumber = "P5555-ND",
+                QuantityAvailable = 1
+            };
+
+            await ResetExpiredAccessTokenIfNeeded();
+            var postResponse = await GetAsJsonAsync(resourcePath, request1);
+
+            return GetServiceResponse(postResponse).Result;
+        }
+
         public async Task<string> KeywordSearch(string keyword)
         {
             var resourcePath = "/Search/v3/Products/Keyword";
@@ -100,6 +116,18 @@ namespace ApiClient
 
             await ResetExpiredAccessTokenIfNeeded();
             var postResponse = await PostAsJsonAsync(resourcePath, request);
+
+            return GetServiceResponse(postResponse).Result;
+        }
+
+        public async Task<string> BatchSearch()
+        {
+            var resourcePath = "/BatchSearch/v3/ProductDetails?excludeMarketPlaceProducts=true";
+
+            var testString = "{\"Products\": [\"P5555-ND\",\"MX25L25645GMI-10G-ND\"]}";
+
+            await ResetExpiredAccessTokenIfNeeded();
+            var postResponse = await PostAsJsonAsync(resourcePath, testString);
 
             return GetServiceResponse(postResponse).Result;
         }
@@ -153,15 +181,74 @@ namespace ApiClient
             }
         }
 
+        public async Task<HttpResponseMessage> GetAsJsonAsync<T>(string resourcePath, T postRequest)
+        {
+            _log.DebugFormat(">ApiClientService::PostAsJsonAsync()");
+            try
+            {
+                var response = await HttpClient.GetAsync(resourcePath);
+                _log.DebugFormat("<ApiClientService::GetAsync()");
+
+                //Unauthorized, then there is a chance token is stale
+                if (response.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    var responseBody = await response.Content.ReadAsStringAsync();
+
+                    if (OAuth2Helpers.IsTokenStale(responseBody))
+                    {
+                        _log.DebugFormat(
+                            $"Stale access token detected ({_clientSettings.AccessToken}. Calling RefreshTokenAsync to refresh it");
+                        await OAuth2Helpers.RefreshTokenAsync(_clientSettings);
+                        _log.DebugFormat($"New Access token is {_clientSettings.AccessToken}");
+
+                        //Only retry the first time.
+                        if (!response.RequestMessage.Headers.Contains(CustomHeader))
+                        {
+                            HttpClient.DefaultRequestHeaders.Add(CustomHeader, CustomHeader);
+                            HttpClient.DefaultRequestHeaders.Authorization =
+                                new AuthenticationHeaderValue("Authorization", _clientSettings.AccessToken);
+                            return await GetAsJsonAsync(resourcePath, postRequest);
+                        }
+                        else if (response.RequestMessage.Headers.Contains(CustomHeader))
+                        {
+                            throw new ApiException($"Inside method {nameof(PostAsJsonAsync)} we received an unexpected stale token response - during the retry for a call whose token we just refreshed {response.StatusCode}");
+                        }
+                    }
+                }
+
+                return response;
+            }
+            catch (HttpRequestException hre)
+            {
+                _log.DebugFormat($"PostAsJsonAsync<T>: HttpRequestException is {hre.Message}");
+                throw;
+            }
+            catch (ApiException dae)
+            {
+                _log.DebugFormat($"PostAsJsonAsync<T>: ApiException is {dae.Message}");
+                throw;
+            }
+        }
+
+
+        
+
         protected async Task<string> GetServiceResponse(HttpResponseMessage response)
         {
             _log.DebugFormat(">ApiClientService::GetServiceResponse()");
             var postResponse = string.Empty;
+            var postHeader = string.Empty;
 
             if (response.IsSuccessStatusCode)
             {
                 if (response.Content != null)
                 {
+
+                    string[] LimitRemaining = (string[])response.Headers.GetValues("X-RateLimit-Remaining");
+
+                    Console.WriteLine("LimitRemaining: {0}", LimitRemaining);
+
+                    //postHeader = await response.Headers
                     postResponse = await response.Content.ReadAsStringAsync();
                 }
             }
