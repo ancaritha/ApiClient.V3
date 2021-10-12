@@ -88,13 +88,13 @@ namespace ApiClient
             }
         }
 
-        public async Task<string> ProductDetails(string keyword)
+        public async Task<string> ProductDetailsQuery(string keyword)
         {
-            var resourcePath = "/Search/v3/Products/{P5555-ND}?includes=DigiKeyPartNumber%2CQuantityAvailable";
+            var resourcePath = "/Search/v3/Products/MX25L6406EMI-12G?includes=DigiKeyPartNumber%2CQuantityAvailable%2C,Obsolete";
 
             var request1 = new ProductDetailsRequest
             {
-                DigiKeyPartNumber = "P5555-ND",
+                DigiKeyPartNumber = keyword,
                 QuantityAvailable = 1
             };
 

@@ -68,7 +68,9 @@ namespace ApiClient.ConsoleApp
 
                 var client = new ApiClientService(settings);
                 //var response = await client.KeywordSearch("P5555-ND");
-                var response = await client.ProductDetails("P5555-ND");
+                //var response = await client.KeywordSearch("MX25L6406EMI-12G");
+                var response = await client.ProductDetailsQuery("MX25L6406EMI-12G");
+                //var response = await client.ProductDetailsQuery("P5555-ND");
                 //var response = await client.BatchSearch();
 
 

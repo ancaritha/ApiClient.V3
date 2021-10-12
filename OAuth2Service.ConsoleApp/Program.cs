@@ -60,18 +60,32 @@ namespace OAuth2Service.ConsoleApp
             var authUrl = oAuth2Service.GenerateAuthUrl(scopes);
             Process.Start(authUrl);
 
+            ///////////////
+            ///// Uncomment to go back to automated version
             // get the URL returned from the callback(RedirectUri)
-            var context = await httpListener.GetContextAsync();
+            //var context = await httpListener.GetContextAsync();
+            ///////////////
 
             // Done with the callback, so stop the HttpListener
             httpListener.Stop();
 
+            #region Automated code
+            // Uncomment code to run automated version and comment out below and uncomment above
+            /*
             // exact the query parameters from the returned URL
             var queryString = context.Request.Url.Query;
             var queryColl = HttpUtility.ParseQueryString(queryString);
 
             // Grab the needed query parameter code from the query collection
             var code = queryColl["code"];
+            */
+            #endregion
+
+            ///////////////
+            // Extra line added to make it manual, comment out and uncomment above to make automated
+            string code = Console.ReadLine();
+            ///////////////
+
             Console.WriteLine($"Using code {code}");
 
             // Pass the returned code value to finish the OAuth2 authorization
